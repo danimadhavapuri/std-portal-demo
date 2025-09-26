@@ -1,30 +1,280 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <style>
-      body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      /* Background image */
-      background-image: url('https://img.freepik.com/free-vector/food-delivery-service-stickers-part-3_534985-66.jpg?semt=ais_hybrid&w=740&q=80');
-      background-size: cover;     /* makes it cover full screen */
-      background-position: center;/* keeps it centered */
-      background-attachment: fixed; /* makes it stay while scrolling */
-      color: white; /* text color so it's visible */
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Food Delivery (HTML/CSS/JS)</title>
+  <style>
+    :root{
+      --accent:#ff6b6b;
+      --muted:#666;
+      --card:#fff;
+      --bg:#f5f7fb;
+      --glass: rgba(255,255,255,0.6);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial;
     }
-    </style> -->
-    <title>Food Delivery Cart/title>
-  </head>
-  <body>
-    <div class="card">
-    <img src="https://source.unsplash.com/320x200/?pizza,food" alt="Delicious Food">
-    <div class="card-content">
-      <h2>Order Delicious Food</h2>
-      <p>Fast delivery, best offers, and top-rated restaurants near you.</p>
-      <button class="btn">Order Now</button>
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#222}
+    header{background:linear-gradient(90deg,#fff 0,#f8fafc);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(15,15,15,0.03)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ffd166);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .title{font-size:1.08rem;font-weight:700}
+    main{max-width:1100px;margin:28px auto;padding:0 20px}
+
+    .layout{display:grid;grid-template-columns:1fr 340px;gap:24px}
+    @media (max-width:880px){.layout{grid-template-columns:1fr}.cart-panel{order:-1}}
+
+    /* Search & filters */
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .search{flex:1;display:flex}
+    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e6e9ee;background:var(--card)}
+    .filters{display:flex;gap:8px}
+    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .secondary{background:#fff;color:var(--accent);border:1px solid #ffdede}
+
+    /* Menu grid */
+    .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media (max-width:1000px){.menu-grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.menu-grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 4px 18px rgba(15,15,15,0.06);display:flex;gap:12px;align-items:center}
+    .thumb{width:92px;height:76px;border-radius:8px;object-fit:cover}
+    .meta{flex:1}
+    .meta h4{margin:0 0 6px 0}
+    .meta p{margin:0;color:var(--muted);font-size:0.9rem}
+    .price-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+    .add{background:#0f172a;color:#fff;padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
+
+    /* Cart */
+    .cart-panel{background:linear-gradient(180deg,#fff,#fbfdff);padding:16px;border-radius:12px;box-shadow:0 8px 28px rgba(15,15,15,0.06);height:fit-content}
+    .cart-title{display:flex;align-items:center;justify-content:space-between}
+    .cart-list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .cart-item{display:flex;gap:10px;align-items:center}
+    .qty{display:inline-flex;gap:6px;align-items:center}
+    .muted{color:var(--muted);font-size:0.95rem}
+    .total{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-weight:700}
+
+    footer{margin-top:30px;text-align:center;color:var(--muted);padding:20px 0}
+
+    /* small helpers */
+    .badge{background:#fff;padding:6px 8px;border-radius:999px;border:1px solid #eee}
+    .empty{padding:18px;border-radius:10px;background:linear-gradient(90deg,#fff,#fcfdff);text-align:center;color:var(--muted)}
+
+    /* simple modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.35)}
+    .modal .box{background:#fff;padding:20px;border-radius:12px;min-width:320px;max-width:540px}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">FD</div>
+      <div>
+        <div class="title">FoodDash</div>
+        <div class="muted" style="font-size:0.9rem">Delicious food, fast delivery</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="muted">Delivering to <strong>Home</strong></div>
+      <button class="btn" id="view-cart-btn">View Cart (<span id="cart-count">0</span>)</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+      <section>
+        <div class="controls">
+          <div class="search"><input id="search" placeholder="Search dishes, e.g., pizza, burger..." /></div>
+          <div class="filters">
+            <button class="btn secondary" data-filter="all">All</button>
+            <button class="btn secondary" data-filter="veg">Veg</button>
+            <button class="btn secondary" data-filter="nonveg">Non-Veg</button>
+          </div>
+        </div>
+
+        <div id="menu" class="menu-grid">
+          <!-- Cards will be injected here -->
+        </div>
+      </section>
+
+      <aside class="cart-panel">
+        <div class="cart-title">
+          <div>
+            <h3 style="margin:0">Your Cart</h3>
+            <div class="muted">Items you added will appear here</div>
+          </div>
+          <div><button class="btn" id="checkout-btn">Checkout</button></div>
+        </div>
+
+        <div id="cart-list" class="cart-list">
+          <div class="empty" id="cart-empty">Your cart is empty 🍽️</div>
+        </div>
+
+        <div class="total">
+          <div>Total</div>
+          <div><span id="total-amt">₹0</span></div>
+        </div>
+
+      </aside>
+    </div>
+
+    <footer>Made with ❤️ — copy this file and open in your browser to try. Customize freely.</footer>
+  </main>
+
+  <!-- Checkout modal -->
+  <div class="modal" id="checkout-modal">
+    <div class="box">
+      <h3>Place your order</h3>
+      <div style="margin-top:8px">
+        <label>Full name</label>
+        <input id="cust-name" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Your name" />
+      </div>
+      <div style="margin-top:8px">
+        <label>Address</label>
+        <input id="cust-address" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Delivery address" />
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="secondary" id="close-modal">Cancel</button>
+        <button class="btn" id="place-order">Place order</button>
+      </div>
     </div>
   </div>
-  </body>
+
+  <script>
+    // Simple in-memory menu data
+    const menuData = [
+      {id:1,name:'Margherita Pizza',desc:'Classic cheese & tomato',price:249,type:'veg',img:'https://images.unsplash.com/photo-1604908177185-79c7cdb2d3c6?auto=format&fit=crop&w=800&q=60'},
+      {id:2,name:'Paneer Tikka',desc:'Spiced paneer pieces',price:189,type:'veg',img:'https://images.unsplash.com/photo-1604908177606-2f8b3e3f6c8b?auto=format&fit=crop&w=800&q=60'},
+      {id:3,name:'Veg Burger',desc:'Crispy veggie patty',price:149,type:'veg',img:'https://images.unsplash.com/photo-1606755962770-8f2e6f7a1c36?auto=format&fit=crop&w=800&q=60'},
+      {id:4,name:'Chicken Biryani',desc:'Fragrant long-grain rice',price:299,type:'nonveg',img:'https://images.unsplash.com/photo-1608032779002-8f8a2d8b3b5e?auto=format&fit=crop&w=800&q=60'},
+      {id:5,name:'Grilled Chicken',desc:'Herb marinated chicken',price:279,type:'nonveg',img:'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=60'},
+      {id:6,name:'Fish Fry',desc:'Crispy coastal style',price:219,type:'nonveg',img:'https://images.unsplash.com/photo-1598515213698-72f0c8e1f6d0?auto=format&fit=crop&w=800&q=60'}
+    ];
+
+    // state
+    const cart = {} // id -> qty
+
+    // helpers
+    function rupee(n){return '₹' + n}
+
+    function renderMenu(items){
+      const menu = document.getElementById('menu');
+      menu.innerHTML = '';
+      items.forEach(d=>{
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `
+          <img class="thumb" src="${d.img}" alt="${d.name}"/>
+          <div class="meta">
+            <h4>${d.name}</h4>
+            <p>${d.desc}</p>
+            <div class="price-row">
+              <div class="muted">${rupee(d.price)}</div>
+              <div><button class="add" data-id="${d.id}">Add</button></div>
+            </div>
+          </div>
+        `;
+        menu.appendChild(el);
+      })
+    }
+
+    function renderCart(){
+      const list = document.getElementById('cart-list');
+      const empty = document.getElementById('cart-empty');
+      list.innerHTML = '';
+      const ids = Object.keys(cart).map(x=>+x);
+      if(ids.length===0){ list.appendChild(empty); document.getElementById('cart-count').innerText=0; document.getElementById('total-amt').innerText=rupee(0); return }
+      let total = 0;
+      ids.forEach(id=>{
+        const item = menuData.find(m=>m.id===id);
+        const qty = cart[id];
+        total += item.price * qty;
+        const row = document.createElement('div'); row.className='cart-item';
+        row.innerHTML = `
+          <div style="flex:1">
+            <div style="font-weight:600">${item.name}</div>
+            <div class="muted">${rupee(item.price)} x ${qty} = ${rupee(item.price*qty)}</div>
+          </div>
+          <div class="qty">
+            <button class="secondary" data-op="dec" data-id="${id}">-</button>
+            <div class="badge">${qty}</div>
+            <button class="secondary" data-op="inc" data-id="${id}">+</button>
+          </div>
+        `;
+        list.appendChild(row);
+      })
+      document.getElementById('cart-count').innerText = ids.reduce((a,b)=>a+cart[b],0);
+      document.getElementById('total-amt').innerText = rupee(total);
+    }
+
+    // initial render
+    renderMenu(menuData);
+    renderCart();
+
+    // events
+    document.getElementById('menu').addEventListener('click',e=>{
+      if(e.target.matches('button.add')){
+        const id = +e.target.dataset.id;
+        cart[id] = (cart[id]||0) + 1;
+        renderCart();
+      }
+    })
+
+    document.getElementById('cart-list').addEventListener('click',e=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const op = btn.dataset.op, id = +btn.dataset.id;
+      if(op==='inc') { cart[id] = (cart[id]||0)+1 }
+      if(op==='dec') { cart[id] = Math.max(0,(cart[id]||0)-1); if(cart[id]===0) delete cart[id] }
+      renderCart();
+    })
+
+    // search & filter
+    document.getElementById('search').addEventListener('input',e=>{
+      const q = e.target.value.trim().toLowerCase();
+      const filtered = menuData.filter(m=> (m.name + ' ' + m.desc).toLowerCase().includes(q));
+      renderMenu(filtered);
+    })
+    document.querySelectorAll('[data-filter]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const f = btn.dataset.filter;
+        if(f==='all') renderMenu(menuData);
+        else renderMenu(menuData.filter(m=>m.type===f));
+      })
+    })
+
+    // cart panel buttons
+    document.getElementById('view-cart-btn').addEventListener('click',()=>{
+      // scroll to cart panel
+      document.querySelector('.cart-panel').scrollIntoView({behavior:'smooth',block:'center'});
+    })
+
+    document.getElementById('checkout-btn').addEventListener('click',()=>{
+      const ids = Object.keys(cart);
+      if(ids.length===0) { alert('Your cart is empty! Add some items.'); return }
+      document.getElementById('checkout-modal').style.display='flex';
+    })
+    document.getElementById('close-modal').addEventListener('click',()=>{
+      document.getElementById('checkout-modal').style.display='none';
+    })
+
+    document.getElementById('place-order').addEventListener('click',()=>{
+      const name = document.getElementById('cust-name').value.trim();
+      const addr = document.getElementById('cust-address').value.trim();
+      if(!name || !addr) { alert('Please enter name and address'); return }
+      // simulate order placement
+      const order = {
+        id: 'ORD' + Math.floor(Math.random()*90000+10000),
+        name, addr, items: Object.keys(cart).map(id => ({...menuData.find(m=>m.id==id), qty:cart[id]})),
+        total: document.getElementById('total-amt').innerText
+      }
+      document.getElementById('checkout-modal').style.display='none';
+      alert('Order placed! Order ID: ' + order.id + '\nTotal: ' + order.total);
+      // clear cart
+      for(const k of Object.keys(cart)) delete cart[k];
+      renderCart();
+      // optionally: you could send `order` to server via fetch()
+    })
+
+  </script>
+</body>
 </html>
