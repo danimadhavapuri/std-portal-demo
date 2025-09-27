@@ -127,17 +127,53 @@
   </main>
 
   <!-- Checkout modal -->
-  <div class="modal" id="checkout-modal">
-    <div class="box">
-      <h3>Place your order</h3>
-      <div style="margin-top:8px">
-        <label>Full name</label>
-        <input id="cust-name" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Your name" />
-      </div>
-      <div style="margin-top:8px">
-        <label>Address</label>
-        <input id="cust-address" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Delivery address" />
-      </div>
+ <div class="modal" id="checkout-modal">
+  <div class="box">
+    <h3>Place your order</h3>
+    
+    <!-- Name -->
+    <div style="margin-top:8px">
+      <label>Full name</label>
+      <input id="cust-name" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Your name" />
+    </div>
+
+    <!-- Address -->
+    <div style="margin-top:8px">
+      <label>Address</label>
+      <input id="cust-address" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" placeholder="Delivery address" />
+    </div>
+
+    <!-- Payment Section -->
+    <div style="margin-top:12px">
+      <label>Payment Method</label>
+      <select id="payment-method" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8">
+        <option value="">-- Select Payment Method --</option>
+        <option value="card">Credit/Debit Card</option>
+        <option value="upi">UPI</option>
+        <option value="cod">Cash on Delivery</option>
+      </select>
+    </div>
+
+    <!-- Card Payment -->
+    <div id="card-fields" style="display:none;margin-top:8px">
+      <input id="card-number" placeholder="Card Number" maxlength="16" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" />
+      <input id="card-expiry" placeholder="MM/YY" maxlength="5" style="width:48%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" />
+      <input id="card-cvv" placeholder="CVV" maxlength="3" style="width:48%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8;float:right" />
+    </div>
+
+    <!-- UPI Payment -->
+    <div id="upi-fields" style="display:none;margin-top:8px">
+      <input id="upi-id" placeholder="Enter UPI ID (e.g., name@upi)" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #e8eef8" />
+    </div>
+
+    <!-- Buttons -->
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;clear:both">
+      <button class="secondary" id="close-modal">Cancel</button>
+      <button class="btn" id="place-order">Place order</button>
+    </div>
+  </div>
+</div>
+
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
         <button class="secondary" id="close-modal">Cancel</button>
         <button class="btn" id="place-order">Place order</button>
@@ -277,6 +313,52 @@
       for(const k of Object.keys(cart)) delete cart[k];
       renderCart();
       // optionally: you could send `order` to server via fetch()
+
+      // Payment method toggle
+document.getElementById('payment-method').addEventListener('change', e=>{
+  const method = e.target.value;
+  document.getElementById('card-fields').style.display = method==='card' ? 'block' : 'none';
+  document.getElementById('upi-fields').style.display = method==='upi' ? 'block' : 'none';
+});
+
+// Modify place order logic
+document.getElementById('place-order').addEventListener('click',()=>{
+  const name = document.getElementById('cust-name').value.trim();
+  const addr = document.getElementById('cust-address').value.trim();
+  const payment = document.getElementById('payment-method').value;
+
+  if(!name || !addr) { alert('Please enter name and address'); return }
+  if(!payment) { alert('Please select payment method'); return }
+
+  if(payment==='card'){
+    const card = document.getElementById('card-number').value.trim();
+    const exp = document.getElementById('card-expiry').value.trim();
+    const cvv = document.getElementById('card-cvv').value.trim();
+    if(card.length<16 || !exp || cvv.length<3){ alert('Please enter valid card details'); return }
+  }
+
+  if(payment==='upi'){
+    const upi = document.getElementById('upi-id').value.trim();
+    if(!upi.includes('@')){ alert('Please enter valid UPI ID'); return }
+  }
+
+  // simulate order placement
+  const order = {
+    id: 'ORD' + Math.floor(Math.random()*90000+10000),
+    name, addr, payment,
+    items: Object.keys(cart).map(id => ({...menuData.find(m=>m.id==id), qty:cart[id]})),
+    total: document.getElementById('total-amt').innerText
+  };
+
+  document.getElementById('checkout-modal').style.display='none';
+  alert('Order placed! Order ID: ' + order.id + '\nTotal: ' + order.total + '\nPayment: ' + order.payment);
+
+  // clear cart
+  for(const k of Object.keys(cart)) delete cart[k];
+  renderCart();
+});
+
+      
     })
 
   </script>
